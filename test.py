@@ -1,24 +1,85 @@
-from flask import Flask, render_template, request
+from __future__ import print_function
+from uszipcode import ZipcodeSearchEngine
+search = ZipcodeSearchEngine()
+#from flask import Flask, render_template, request
 import requests
 import geocoder
 
-app = Flask(__name__)
-
-@app.route('/differentlocation', methods=['POST'])
-def differentlocation():
-    return render_template('differentlocation.html')
-
-@app.route('/')
-def index():
+def zipcodelocation():
     g = geocoder.ip('me')
     zp = str(g.postal)
-    r = requests.get('http://api.openweathermap.org/data/2.5/weather?zip=88901,us&appid=c2b4563e38b579109a4696ba93973a93')
-    json_object = r.json()
-    sun = json_object['weather'][0]['main']
-    if sun == "Clear":
-        return render_template('index.html',sunny = sun)
-    else:
-        return render_template('index.html',sunny = "X")
+    return zp
 
-if __name__ == '__main__':
-    app.run(debug=True)
+def latitudelocation():
+    g = geocoder.ip('me')
+    lat = float(g.lat)
+    return lat
+
+def longitudelocation():
+    g = geocoder.ip('me')
+    lng = float(g.lng)
+    return lng
+
+def generateclosestziplist(lat,lng):
+    ziplist = search.by_coordinate(lat, lng, radius=100, returns=30)
+    res1 = []
+    zipdistance = 0
+    for num1 in ziplist:
+        res1.append(ziplist[zipdistance]['Zipcode'])
+        zipdistance += 1
+    return res1
+
+def findsunnyzip(zp,res1):
+    num2 = 1
+    zp = str(zp)
+    while True:
+        r = requests.get('http://api.openweathermap.org/data/2.5/weather?zip='+zp+',us&appid=c2b4563e38b579109a4696ba93973a93')
+        json_object = r.json()
+        sun = json_object['weather'][0]['main']
+        if sun == "Clear":
+            return zp
+            break
+        else:
+            zp = res1[num2]
+            num2 + 1
+            if num2 < 50:
+                continue
+            else:
+                return "No sunny coffee shops nearby"
+
+def ziptolat(zp):
+    zipcode = search.by_zipcode(zp)
+    lat = zipcode.Latitude
+    return lat
+
+def ziptolng(zp):
+    zipcode = search.by_zipcode(zp)
+    lng = zipcode.Longitude
+    return lng
+
+def coffeeshop(lat,lng):
+    r = requests.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json?location='+lat+','+lng+'&radius=1500&type=restaurant&keyword=coffee&key=AIzaSyCzEUDKeEEkEWDkZc_rNskT3GVsgdf_Kf0')
+    json_object = r.json()
+    shop = json_object['results'][0]['name']
+    return shop
+
+lat = 0
+lng = 0
+zp = 0
+res1 = []
+sunnylat = 0
+sunnylng = 0
+shop = ""
+
+lat = latitudelocation()
+lng = longitudelocation()
+zp = zipcodelocation()
+res1 = generateclosestziplist(lat,lng)
+sunnyzip = findsunnyzip(zp, res1)
+if len(sunnyzip) == 5: #statement ensures that only zip codes are returned.  If there is no sunny location, a string saying that is returned.
+    sunnylat = str(ziptolat(sunnyzip))
+    sunnylng = str(ziptolng(sunnyzip))
+    shop = coffeeshop(sunnylat,sunnylng)
+    print (shop)
+else:
+    print (sunnyzip)

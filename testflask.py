@@ -1,7 +1,7 @@
 from __future__ import print_function
 from uszipcode import ZipcodeSearchEngine
 search = ZipcodeSearchEngine()
-from flask import Flask
+from flask import Flask, flash, redirect, render_template, request, session, abort
 app = Flask(__name__)
 import requests
 import geocoder
@@ -46,7 +46,7 @@ def findsunnyzip(zp,res1):
             if num2 < 50:
                 continue
             else:
-                return "No sunny coffee shops nearby"
+                return "not in San Francisco"
 
 def ziptolat(zp):
     zipcode = search.by_zipcode(zp)
@@ -84,9 +84,11 @@ def function():
         sunnylat = str(ziptolat(sunnyzip))
         sunnylng = str(ziptolng(sunnyzip))
         shop = coffeeshop(sunnylat,sunnylng)
-        return shop
+        return render_template(
+            'index.html',coffeeandsun=shop)
     else:
-        return sunnyzip
+        return render_template(
+            'index.html',coffeeandsun=sunnyzip)
 
 if __name__ == "__main__":
     app.run()

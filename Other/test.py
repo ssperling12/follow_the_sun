@@ -21,7 +21,7 @@ def longitudelocation():
     return lng
 
 def generateclosestziplist(lat,lng):
-    ziplist = search.by_coordinate(lat, lng, radius=100, returns=30)
+    ziplist = search.by_coordinate(lat, lng, radius=100, returns=55)
     res1 = []
     zipdistance = 0
     for num1 in ziplist:
@@ -41,7 +41,7 @@ def findsunnyzip(zp,res1):
             break
         else:
             zp = res1[num2]
-            num2 + 1
+            num2 += 1
             if num2 < 50:
                 continue
             else:
